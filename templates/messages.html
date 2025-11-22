@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block page_title %}Личные сообщения{% endblock %}
+
+{% block content %}
+<div class="messages-container">
+    <div class="users-list">
+        <h3>Ученики класса</h3>
+        <div id="usersList">
+            {% for user in users %}
+            <div class="user-item" onclick="selectUser({{ user.id }}, '{{ user.get_full_name() }}')">
+                <div class="user-avatar">
+                    {{ user.first_name[0] }}{{ user.last_name[0] }}
+                </div>
+                {{ user.get_full_name() }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="conversation-area">
+        <div id="conversationHeader">
+            <h3>Выберите собеседника</h3>
+        </div>
+        
+        <div id="messagesList"></div>
+        
+        <div class="message-input-container" id="messageInputContainer" style="display: none;">
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="messageInput" placeholder="Введите сообщение..." class="form-input">
+                <button onclick="sendMessage()" class="btn btn-primary">Отправить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedUserId = null;
+let selectedUserName = '';
+
+function selectUser(userId, userName) {
+    selectedUserId = userId;
+    selectedUserName = userName;
+    
+    document.getElementById('conversationHeader').innerHTML = `<h3>Чат с ${userName}</h3>`;
+    document.getElementById('messageInputContainer').style.display = 'block';
+    
+    loadMessages(userId);
+}
+
+function loadMessages(userId) {
+    fetch(`/get_messages/${userId}`)
+    .then(response => response.json())
+    .then(messages => {
+        const messagesList = document.getElementById('messagesList');
+        messagesList.innerHTML = '';
+        
+        messages.forEach(msg => {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message-item ${msg.is_my ? 'my-message' : 'other-message'}`;
+            messageDiv.innerHTML = `
+                <div class="message-content">${msg.content}</div>
+                <div class="message-time">${msg.created_at}</div>
+            `;
+            messagesList.appendChild(messageDiv);
+        });
+        
+        messagesList.scrollTop = messagesList.scrollHeight;
+    })
+    .catch(error => {
+        console.error('Ошибка загрузки сообщений:', error);
+    });
+}
+
+function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const content = input.value.trim();
+    
+    if (!content || !selectedUserId) return;
+    
+    // Блокируем кнопку
+    const button = document.querySelector('#messageInputContainer button');
+    button.disabled = true;
+    button.textContent = 'Отправка...';
+    
+    fetch('/send_message', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+            receiver_id: selectedUserId, 
+            content: content 
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            input.value = '';
+            // Добавляем сообщение в список без перезагрузки
+            addMessageToConversation(content, true);
+        } else {
+            alert('Ошибка отправки: ' + (data.error || 'неизвестная ошибка'));
+        }
+    })
+    .catch(error => {
+        alert('Ошибка сети');
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.textContent = 'Отправить';
+    });
+}
+
+function addMessageToConversation(content, isMyMessage = true) {
+    const messagesList = document.getElementById('messagesList');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message-item ${isMyMessage ? 'my-message' : 'other-message'}`;
+    
+    const now = new Date();
+    const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                      now.getMinutes().toString().padStart(2, '0');
+    
+    messageDiv.innerHTML = `
+        <div class="message-content">${content}</div>
+        <div class="message-time">${timeString}</div>
+    `;
+    
+    messagesList.appendChild(messageDiv);
+    messagesList.scrollTop = messagesList.scrollHeight;
+}
+
+// Добавляем кнопку обновления
+document.addEventListener('DOMContentLoaded', function() {
+    const header = document.querySelector('.content-header');
+    const refreshBtn = document.createElement('button');
+    refreshBtn.className = 'btn btn-primary';
+    refreshBtn.textContent = '🔄 Обновить';
+    refreshBtn.onclick = function() {
+        if (selectedUserId) {
+            loadMessages(selectedUserId);
+        } else {
+            location.reload();
+        }
+    };
+    header.appendChild(refreshBtn);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block page_title %}Чат класса{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="chat-messages" id="chatMessages">
+        {% for message in messages %}
+        <div class="message-item {% if message.user_id == current_user.id %}my-message{% else %}other-message{% endif %}">
+            <div class="message-header">
+                <strong>{{ message.user.get_full_name() }}</strong>
+                <span class="message-time">{{ message.created_at.strftime('%H:%M') }}</span>
+            </div>
+            <div class="message-content">{{ message.content }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="chat-input">
+        <input type="text" id="chatMessageInput" placeholder="Введите сообщение..." class="form-input">
+        <button onclick="sendChatMessage()" class="btn btn-primary">Отправить</button>
+    </div>
+</div>
+
+<script>
+function sendChatMessage() {
+    const input = document.getElementById('chatMessageInput');
+    const content = input.value.trim();
+    
+    if (!content) return;
+    
+    // Блокируем кнопку чтобы избежать двойной отправки
+    const button = document.querySelector('.chat-input button');
+    button.disabled = true;
+    button.textContent = 'Отправка...';
+    
+    fetch('/send_chat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: content })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            input.value = '';
+            // Добавляем сообщение в чат без перезагрузки страницы
+            addMessageToChat(content, true);
+        } else {
+            alert('Ошибка отправки: ' + (data.error || 'неизвестная ошибка'));
+        }
+    })
+    .catch(error => {
+        alert('Ошибка сети');
+    })
+    .finally(() => {
+        // Восстанавливаем кнопку
+        button.disabled = false;
+        button.textContent = 'Отправить';
+    });
+}
+
+function addMessageToChat(content, isMyMessage = true) {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message-item ${isMyMessage ? 'my-message' : 'other-message'}`;
+    
+    const now = new Date();
+    const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                      now.getMinutes().toString().padStart(2, '0');
+    
+    messageDiv.innerHTML = `
+        <div class="message-header">
+            <strong>${isMyMessage ? 'Вы' : 'Новое сообщение'}</strong>
+            <span class="message-time">${timeString}</span>
+        </div>
+        <div class="message-content">${content}</div>
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Функция для проверки новых сообщений (можно вызвать вручную или по кнопке)
+function checkNewMessages() {
+    fetch('/chat?check_new=true')
+    .then(response => response.json())
+    .then(data => {
+        if (data.new_messages && data.new_messages.length > 0) {
+            data.new_messages.forEach(msg => {
+                if (msg.user_id !== {{ current_user.id }}) {
+                    addMessageToChat(msg.content, false);
+                }
+            });
+        }
+    })
+    .catch(error => console.error('Ошибка проверки сообщений:', error));
+}
+
+// Кнопка для ручной проверки новых сообщений
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавляем кнопку обновления в заголовок
+    const header = document.querySelector('.content-header');
+    const refreshBtn = document.createElement('button');
+    refreshBtn.className = 'btn btn-primary';
+    refreshBtn.textContent = '🔄 Обновить';
+    refreshBtn.onclick = function() {
+        location.reload();
+    };
+    header.appendChild(refreshBtn);
+    
+    // Авто-скролл вниз при загрузке
+    const chatMessages = document.getElementById('chatMessages');
+    if (chatMessages) {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+});
+</script>
+{% endblock %}

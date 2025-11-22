@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ошибка сервера - Форум 4Ж класса</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-form" style="max-width: 500px; text-align: center;">
+            <div class="auth-header">
+                <h1>500</h1>
+                <h2>Ошибка сервера</h2>
+            </div>
+            
+            <div style="font-size: 6em; margin: 30px 0;">😵</div>
+            
+            <p style="color: var(--text-secondary); font-size: 1.1em; line-height: 1.6; margin-bottom: 30px;">
+                Произошла внутренняя ошибка сервера. Пожалуйста, попробуйте позже.
+            </p>
+            
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('index') }}" class="btn btn-primary">
+                    На главную
+                </a>
+                {% else %}
+                <a href="{{ url_for('welcome') }}" class="btn btn-primary">
+                    На главную
+                </a>
+                {% endif %}
+                <button onclick="location.reload()" class="btn" style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color);">
+                    Обновить
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

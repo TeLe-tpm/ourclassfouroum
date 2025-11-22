@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block page_title %}Лента новостей{% endblock %}
+
+{% block header_actions %}
+    {% if current_user.role == 'admin' %}
+    <button class="btn btn-primary" onclick="showNewsForm()">Добавить новость</button>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+{% if current_user.role == 'admin' %}
+<div class="form-actions" id="newsForm" style="display: none;">
+    <div class="form-group">
+        <input type="text" id="newsTitle" placeholder="Заголовок новости" class="form-input">
+    </div>
+    <div class="form-group">
+        <textarea id="newsContent" placeholder="Текст новости" class="form-input" rows="4"></textarea>
+    </div>
+    <div class="form-actions">
+        <button onclick="addNews()" class="btn btn-primary">Опубликовать</button>
+        <button onclick="hideNewsForm()" class="btn btn-danger">Отмена</button>
+    </div>
+</div>
+{% endif %}
+
+<div class="posts-container" id="postsContainer">
+    {% for post in posts %}
+    <div class="post-card">
+        <div class="post-header">
+            <div class="post-author">{{ post.author.get_full_name() }}</div>
+            <div class="post-date">{{ post.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
+        </div>
+        <div class="post-content">
+            <h3>{{ post.title }}</h3>
+            <p>{{ post.content }}</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="post-card">
+        <div class="post-content">
+            <p>Пока нет новостей</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function showNewsForm() {
+    document.getElementById('newsForm').style.display = 'block';
+}
+
+function hideNewsForm() {
+    document.getElementById('newsForm').style.display = 'none';
+}
+
+function addNews() {
+    const title = document.getElementById('newsTitle').value;
+    const content = document.getElementById('newsContent').value;
+    
+    if (!title || !content) {
+        alert('Заполните все поля');
+        return;
+    }
+    
+    fetch('/add_news', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: title, content: content })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Ошибка сети');
+    });
+}
+</script>
+{% endblock %}

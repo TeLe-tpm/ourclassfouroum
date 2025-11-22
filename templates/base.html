@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="{{ current_user.theme if current_user.is_authenticated else 'light' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Форум 4Ж класса{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>4Ж Класс</h2>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('index') }}" class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+                    <span>🏠</span>
+                    <span>Главная</span>
+                </a>
+                <a href="{{ url_for('homework') }}" class="nav-item {% if request.endpoint == 'homework' %}active{% endif %}">
+                    <span>📚</span>
+                    <span>Домашнее задание</span>
+                </a>
+                <a href="{{ url_for('info') }}" class="nav-item {% if request.endpoint == 'info' %}active{% endif %}">
+                    <span>ℹ️</span>
+                    <span>Информация</span>
+                </a>
+                <a href="{{ url_for('chat') }}" class="nav-item {% if request.endpoint == 'chat' %}active{% endif %}">
+                    <span>💬</span>
+                    <span>Чат класса</span>
+                </a>
+                <a href="{{ url_for('messages') }}" class="nav-item {% if request.endpoint == 'messages' %}active{% endif %}">
+                    <span>✉️</span>
+                    <span>Личные сообщения</span>
+                </a>
+                
+                {% if current_user.role == 'admin' %}
+                <a href="{{ url_for('admin') }}" class="nav-item admin-item {% if request.endpoint == 'admin' %}active{% endif %}">
+                    <span>⚙️</span>
+                    <span>Админ-панель</span>
+                </a>
+                {% endif %}
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        {{ current_user.first_name[0] }}{{ current_user.last_name[0] }}
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name">{{ current_user.get_full_name() }}</div>
+                        <div class="user-role">
+                            {% if current_user.role == 'admin' %}
+                            <span class="admin-badge">Админ</span>
+                            {% else %}
+                            Ученик
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="sidebar-actions">
+                    <button id="themeToggle" class="theme-btn">
+                        <span class="theme-icon">🌙</span>
+                    </button>
+                    <a href="{{ url_for('logout') }}" class="logout-btn">
+                        <span>🚪</span>
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="content-header">
+                <h1>{% block page_title %}Главная страница{% endblock %}</h1>
+                {% block header_actions %}{% endblock %}
+            </div>
+            
+            <div class="content">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    {% else %}
+        {% block auth_content %}{% endblock %}
+    {% endif %}
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
