@@ -1,0 +1,30 @@
+class_forum_4j/
+│
+├── static/
+│   ├── css/
+│   │   ├── style.css
+│   │   └── themes.css
+│   ├── js/
+│   │   ├── main.js
+│   │   ├── theme.js
+│   │   └── chat.js
+│   └── images/
+│       ├── logo.png
+│       └── default-avatar.png
+│
+├── templates/
+│   ├── base.html
+│   ├── index.html
+│   ├── login.html
+│   ├── register.html
+│   ├── admin.html
+│   ├── homework.html
+│   ├── info.html
+│   ├── chat.html
+│   ├── messages.html
+│   └── profile.html
+│
+├── app.py
+├── config.py
+├── requirements.txt
+└── run.py
